@@ -1,6 +1,10 @@
+import jsonwebtoken from "jsonwebtoken";
 import { responseStatus } from "../response.js";
 import { connection } from "../settings/db.js";
-import pkg from "bcryptjs"
+import bcryptjs from "bcryptjs";
+import { jwtKey } from "../settings/jwtKey.js";
+
+
 
 
 export const getAllUsers = (req, res) => {
@@ -30,12 +34,12 @@ export const signup = (req, res) => {
         }
         else {
 
-            const salt = pkg.genSaltSync(15);
+            const salt = bcryptjs.genSaltSync(15);
 
             const userArrayKeys = ['userName', 'userSurname', 'email', 'password'];
 
             const user = userArrayKeys.map((key, index) => {
-                return index === 3 ? pkg.hashSync(req.body[key], salt) : req.body[key]
+                return index === 3 ? bcryptjs.hashSync(req.body[key], salt) : req.body[key]
             })
 
             console.log(user)
@@ -51,4 +55,38 @@ export const signup = (req, res) => {
 
     })
 
+}
+
+export const signin=(req, res)=>{
+    
+    let sql = "SELECT `userID`, `userEmail`, `userPassword` FROM `users` WHERE `userEmail`=?";
+
+    connection.query(sql, req.body.email, (error, rows, fields)=>{
+        if(error)
+            responseStatus(400, error, res)
+        if(rows.length<=0){
+            responseStatus(401, { message: `Пользователь с таким e-mail - ${req.body.email} уже зарегистрирован`}, res)
+        } else{
+            const rowsParsed=JSON.parse(JSON.stringify(rows))
+
+            rowsParsed.map(row=>{
+
+                const passwordChekResult = bcryptjs.compareSync(req.body.password, row.userPassword)
+                
+                if(passwordChekResult){
+
+                    const token = jsonwebtoken.sign(
+                        {userId: row.userID, userEmail: row.UserEmail},
+                        jwtKey,
+                        {expiresIn: "24h"})
+
+                    responseStatus(200,{token: `Bearer ${token}`, id: row.userId, email: row.userEmail},res);
+                }else{
+                    responseStatus(401,{message: 'Неверный пароль'},res);
+                }
+                return true
+            })   
+        }
+    })
+    
 }

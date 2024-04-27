@@ -1,3 +1,4 @@
 node_modules
 dbenv.js
+jwtKey.js
 .vscode
