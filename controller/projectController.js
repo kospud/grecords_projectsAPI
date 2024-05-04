@@ -1,15 +1,28 @@
 import { responseStatus } from "../response.js"
 import { connection } from "../settings/db.js";
+import { getUserID } from "../commonModule.js";
 
+const projectKeys = ['projectName', 'userID', 'typeID', 'projectDescription']
+const stageKeys = ['taskID', 'userID', 'startDatePlan', 'endDatePlan', 'statusID', 'stageNumber', 'stageDecription'];
 
 export const getProjectsByType = (req, res) => {
 
-    const sql = `SELECT pr.projectID, tp.typeName as type, pr.projectName, us.userName, us.userSurname, st.taskID as stageID, ts.taskName as stageName FROM projects pr, projecttypes tp, users us, projectstages st, tasks ts
+    const sql = `SELECT pr.projectID, tp.typeName as type, pr.projectName, us.userName, us.userSurname, st.taskID as stageID, ts.taskName as stageName, selectedByUser(st.projectID, ? ) as selected
+    FROM projects pr, projecttypes tp, users us, projectstages st, tasks ts
     WHERE
     pr.typeID=? AND tp.typeID=pr.typeID AND us.userID=pr.userID AND st.projectID=pr.projectID AND st.statusID=2 AND ts.taskID=st.taskID AND pr.ended=0;
     `
 
-    connection.query(sql, req.params['type'], (error, rows, fields) => {
+    const token = req.headers['authorization']
+    
+    let userID=getUserID(token)
+    
+    if(!userID){
+        responseStatus(500,{message: 'ошибка чтения токена пользователя'}, res)
+    }
+    
+    const params = [userID, req.params['type']]
+    connection.query(sql, params, (error, rows, fields) => {
         if (error) {
             responseStatus(500, error, res)
         } else {
@@ -35,7 +48,7 @@ export const getProject = (req, res) => {
 
                 rowsParsed.map((row) => {
 
-                    sql = `SELECT st.stageID, st.taskID, ts.taskName, st.userID, us.userName, us.userSurname, st.startDatePlan,st.endDatePlan, st.statusID, stat.statusName, st.stageNumber, st.stageDescription
+                    sql = `SELECT  st.taskID, ts.taskName, st.userID, us.userName, us.userSurname, st.startDatePlan,st.endDatePlan, st.statusID, stat.statusName, st.stageNumber, st.stageDescription
                     FROM projectstages st, tasks ts, users us, stagestatus stat
                     WHERE
                     st.projectID=? AND ts.taskID=st.taskID AND us.userID=st.userID AND stat.statusID=st.statusID
@@ -47,7 +60,8 @@ export const getProject = (req, res) => {
                         } else {
 
                             let stages = JSON.parse(JSON.stringify(rows))
-                           
+
+
                             responseStatus(200, { ...row, stages: stages }, res)
                         }
                     })
@@ -65,8 +79,6 @@ export const addProject = (req, res) => {
 
     let sql = "INSERT INTO `projects`(`projectName`, `userID`, `typeID`, `projectDescription`, `ended`) VALUES (?,?,?,?,0)"
 
-    const projectKeys = ['projectName', 'userID', 'typeID', 'projectDescription']
-    const stageKeys = ['taskID', 'userID', 'startDatePlan', 'endDatePlan', 'statusID', 'stageNumber', 'stageDecription'];
     const insertedProjectValues = projectKeys.map(key => { return req.body[key] })
 
     const sendedResult = { project: {}, stages: [] };
@@ -114,4 +126,55 @@ export const addProject = (req, res) => {
         });
     });
 
+}
+
+export const updateProject = (req, res) => {
+
+    let sql = 'SELECT projectName FROM projects WHERE projectID=?'
+
+    connection.query(sql, req.params['id'], (error, rows, fields) => {
+        if (error) {
+            responseStatus(500, error, res)
+        } else {
+            if (typeof rows !== 'undefined' && rows.length > 0) {
+
+                sql = "UPDATE `projects` SET `projectName`=?,`userID`=?,`typeID`=?, `projectDescription`=? WHERE projectID=?"
+                const newProjectValues = projectKeys.map(key => { return req.body[key] })
+                newProjectValues.push(req.params['id']);
+
+                connection.query(sql, newProjectValues, (error, result) => {
+                    if (error) {
+
+                        responseStatus(500, error, res)
+
+                    } else {
+                        responseStatus(200, result, res)
+                    }
+                });
+
+            }
+            else {
+                responseStatus(404, { message: `проекта с ID: ${req.params['id']} не существует` }, res)
+            }
+        }
+    })
+
+}
+
+export const removeProject = (req, res) => {
+
+    const sql = 'DELETE FROM `projects` WHERE projectID=?'
+
+    connection.query(sql, req.params['id'], (error, result) => {
+        if (error) {
+            responseStatus(500, error, res)
+        } else {
+            responseStatus(200, result, res)
+        }
+    })
+}
+
+export const selectedProjects = (req, res) => {
+
+    const sql = ``
 }

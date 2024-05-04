@@ -4,13 +4,10 @@ import { connection } from "../settings/db.js";
 import bcryptjs from "bcryptjs";
 import { jwtKey } from "../settings/jwtKey.js";
 
-
-
-
 export const getAllUsers = (req, res) => {
     connection.query('SELECT `userID`,`userName`, `userSurname`, `userEmail` FROM `users`', (error, rows, fields) => {
         if (error)
-            responseStatus(400, error, res);
+            responseStatus(200, error, res);
         else {
             responseStatus(200, rows, res);
         }
@@ -59,13 +56,13 @@ export const signup = (req, res) => {
 
 export const signin = (req, res) => {
 
-    let sql = "SELECT `userID`, `userEmail`, `userPassword` FROM `users` WHERE `userEmail`= ?";
+    let sql = "SELECT `userID`, `userEmail`, `userPassword`,`userName`, `userSurname` FROM `users` WHERE `userEmail`= ?";
 
     connection.query(sql, req.body.email, (error, rows, fields) => {
         if (error)
             responseStatus(400, error, res)
         if (rows.length <= 0) {
-            responseStatus(401, { message: `Пользователь с таким e-mail - ${req.body.email} уже зарегистрирован` }, res)
+            responseStatus(401, { message: `Пользователя с таким e-mail - ${req.body.email} не существует` }, res)
         } else {
             const rowsParsed = JSON.parse(JSON.stringify(rows))
 
@@ -80,7 +77,7 @@ export const signin = (req, res) => {
                         jwtKey,
                         { expiresIn: "15d" })
 
-                    responseStatus(200, { token: `Bearer ${token}`, id: row.userId, email: row.userEmail }, res);
+                    responseStatus(200, { token: `Bearer ${token}`, id: row.userId, email: row.userEmail, userName: `${row.userName} ${row.userSurname}` }, res);
                 } else {
                     responseStatus(401, { message: 'Неверный пароль' }, res);
                 }
@@ -88,5 +85,5 @@ export const signin = (req, res) => {
             })
         }
     })
-
 }
+
