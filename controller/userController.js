@@ -3,6 +3,7 @@ import { responseStatus } from "../response.js";
 import { connection } from "../settings/db.js";
 import bcryptjs from "bcryptjs";
 import { jwtKey } from "../settings/jwtKey.js";
+import { getUserID } from "../commonModule.js";
 
 export const getAllUsers = (req, res) => {
     connection.query('SELECT `userID`,`userName`, `userSurname`, `userEmail` FROM `users`', (error, rows, fields) => {
@@ -12,6 +13,22 @@ export const getAllUsers = (req, res) => {
             responseStatus(200, rows, res);
         }
     })
+}
+
+export const getUser=(req, res)=>{
+    
+    const sql='SELECT `userID`,`userName`, `userSurname`, `userEmail` FROM `users` WHERE userID=?'
+    const userId=getUserID(req.headers['authorization']);
+
+    connection.query(sql, userId, (error, rows, fields)=>{
+        if(error){
+            responseStatus(500, error, res)
+        } else{
+            responseStatus(200,rows,res)
+        }
+    })
+
+
 }
 
 export const signup = (req, res) => {
@@ -60,8 +77,8 @@ export const signin = (req, res) => {
 
     connection.query(sql, req.body.email, (error, rows, fields) => {
         if (error)
-            responseStatus(400, error, res)
-        if (rows.length <= 0) {
+            responseStatus(500, {message: error.message}, res)
+        if (typeof rows == 'undefined' || rows.length <= 0) {
             responseStatus(401, { message: `Пользователя с таким e-mail - ${req.body.email} не существует` }, res)
         } else {
             const rowsParsed = JSON.parse(JSON.stringify(rows))

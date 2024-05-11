@@ -2,12 +2,12 @@ import { responseStatus } from "../response.js"
 import { connection } from "../settings/db.js";
 import { getUserID } from "../commonModule.js";
 
-const projectKeys = ['projectName', 'userID', 'typeID', 'projectDescription']
+const projectKeys = [`projectName`, `userID`, `typeID`,`startDatePlan`,`endDatePlan`, `projectDescription`, `ended`]
 const stageKeys = ['taskID', 'userID', 'startDatePlan', 'endDatePlan', 'statusID', 'stageNumber', 'stageDecription'];
 
 export const getProjectsByType = (req, res) => {
 
-    const sql = `SELECT pr.projectID, tp.typeName as type, pr.projectName, us.userName, us.userSurname, st.taskID as stageID, ts.taskName as stageName, selectedByUser(st.projectID, ? ) as selected
+    const sql = `SELECT pr.projectID, tp.typeName as type, pr.projectName, us.userName, us.userSurname, st.taskID as stageID,pr.startDatePlan as startDate, pr.endDatePlan as endDate, st.EndDatePlan as stageEndDate, ts.taskName as stageName, selectedByUser(st.projectID, ? ) as selected
     FROM projects pr, projecttypes tp, users us, projectstages st, tasks ts
     WHERE
     pr.typeID=? AND tp.typeID=pr.typeID AND us.userID=pr.userID AND st.projectID=pr.projectID AND st.statusID=2 AND ts.taskID=st.taskID AND pr.ended=0;
@@ -77,7 +77,7 @@ export const getProject = (req, res) => {
 
 export const addProject = (req, res) => {
 
-    let sql = "INSERT INTO `projects`(`projectName`, `userID`, `typeID`, `projectDescription`, `ended`) VALUES (?,?,?,?,0)"
+    let sql = "INSERT INTO `projects`(`projectName`, `userID`, `typeID`,`startDatePlan`,`endDatePlan`, `projectDescription`, `ended`) VALUES (?,?,?,?,?,?,0)"
 
     const insertedProjectValues = projectKeys.map(key => { return req.body[key] })
 
@@ -109,6 +109,7 @@ export const addProject = (req, res) => {
                             })
                         } else {
                             sendedResult.stages.push(result)
+
                         }
                     })
                 });
@@ -122,6 +123,8 @@ export const addProject = (req, res) => {
                         responseStatus(200, sendedResult, res);
                     }
                 });
+
+                
             }
         });
     });
@@ -175,6 +178,18 @@ export const removeProject = (req, res) => {
 }
 
 export const selectedProjects = (req, res) => {
-
     const sql = ``
+}
+
+export const getProjects=(req, res)=>{
+
+    const sql='SELECT projectID, projectName FROM projects WHERE ended=0'
+
+    connection.query(sql,(error,rows,fields)=>{
+        if(error){
+            responseStatus(500, {message: error.message}, res)
+        } else{
+            responseStatus(200, rows, res)
+        }
+    })
 }
