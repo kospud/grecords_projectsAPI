@@ -15,16 +15,16 @@ export const getAllUsers = (req, res) => {
     })
 }
 
-export const getUser=(req, res)=>{
-    
-    const sql='SELECT `userID`,`userName`, `userSurname`, `userEmail` FROM `users` WHERE userID=?'
-    const userId=getUserID(req.headers['authorization']);
+export const getUser = (req, res) => {
 
-    connection.query(sql, userId, (error, rows, fields)=>{
-        if(error){
+    const sql = 'SELECT `userID`,`userName`, `userSurname`, `userEmail` FROM `users` WHERE userID=?'
+    const userId = getUserID(req.headers['authorization']);
+
+    connection.query(sql, userId, (error, rows, fields) => {
+        if (error) {
             responseStatus(500, error, res)
-        } else{
-            responseStatus(200,rows,res)
+        } else {
+            responseStatus(200, rows, res)
         }
     })
 
@@ -77,7 +77,7 @@ export const signin = (req, res) => {
 
     connection.query(sql, req.body.email, (error, rows, fields) => {
         if (error)
-            responseStatus(500, {message: error.message}, res)
+            responseStatus(500, { message: error.message }, res)
         if (typeof rows == 'undefined' || rows.length <= 0) {
             responseStatus(401, { message: `Пользователя с таким e-mail - ${req.body.email} не существует` }, res)
         } else {

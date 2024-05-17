@@ -2,7 +2,7 @@ import { responseStatus } from "../response.js"
 import { connection } from "../settings/db.js";
 import { getUserID } from "../commonModule.js";
 
-const projectKeys = [`projectName`, `userID`, `typeID`,`startDatePlan`,`endDatePlan`, `projectDescription`, `ended`]
+const projectKeys = [`projectName`, `userID`, `typeID`, `startDatePlan`, `endDatePlan`, `projectDescription`, `ended`]
 const stageKeys = ['taskID', 'userID', 'startDatePlan', 'endDatePlan', 'statusID', 'stageNumber', 'stageDecription'];
 
 export const getProjectsByType = (req, res) => {
@@ -14,13 +14,13 @@ export const getProjectsByType = (req, res) => {
     `
 
     const token = req.headers['authorization']
-    
-    let userID=getUserID(token)
-    
-    if(!userID){
-        responseStatus(500,{message: 'ошибка чтения токена пользователя'}, res)
+
+    let userID = getUserID(token)
+
+    if (!userID) {
+        responseStatus(500, { message: 'ошибка чтения токена пользователя' }, res)
     }
-    
+
     const params = [userID, req.params['type']]
     connection.query(sql, params, (error, rows, fields) => {
         if (error) {
@@ -85,50 +85,48 @@ export const addProject = (req, res) => {
 
     connection.beginTransaction(err => {
         if (err) {
-            responseStatus(500, err, res);
-        }
-        connection.query(sql, insertedProjectValues, (error, result) => {
-            if (error)
-                return connection.rollback(() => {
-                    responseStatus(500, error, res)
-                })
-            else {
-                sendedResult.project = result;
-                const projectID = result.insertId;
+            responseStatus(500, {message: err.message}, res);
+        } else {
+            connection.query(sql, insertedProjectValues, (error, result) => {
+                if (error)
+                    return connection.rollback(() => {
+                        responseStatus(500, error, res)
+                    })
+                else {
+                    sendedResult.project = result;
+                    const projectID = result.insertId;
 
-                sql = "INSERT INTO `projectstages`(`projectID`, `taskID`, `userID`, `startDatePlan`, `endDatePlan`, `statusID`, `stageNumber`, `stageDescription`) VALUES (?,?,?,?,?,?,?,?)"
+                    sql = "INSERT INTO `projectstages`(`projectID`, `taskID`, `userID`, `startDatePlan`, `endDatePlan`, `statusID`, `stageNumber`, `stageDescription`) VALUES (?,?,?,?,?,?,?,?)"
 
-                req.body.stages.forEach(element => {
-                    let insertedStage = [];
-                    insertedStage.push(projectID, ...stageKeys.map(key => { return element[key] }))
+                    req.body.stages.forEach(element => {
+                        let insertedStage = [];
+                        insertedStage.push(projectID, ...stageKeys.map(key => { return element[key] }))
 
-                    connection.query(sql, insertedStage, (error, result) => {
+                        connection.query(sql, insertedStage, (error, result) => {
+                            if (error) {
+                                return connection.rollback(() => {
+                                    responseStatus(500, error, res)
+                                })
+                            } else {
+                                sendedResult.stages.push(result)
+
+                            }
+                        })
+                    });
+
+                    connection.commit(error => {
                         if (error) {
                             return connection.rollback(() => {
                                 responseStatus(500, error, res)
-                            })
+                            });
                         } else {
-                            sendedResult.stages.push(result)
-
+                            responseStatus(200, sendedResult, res);
                         }
-                    })
-                });
-
-                connection.commit(error => {
-                    if (error) {
-                        return connection.rollback(() => {
-                            responseStatus(500, error, res)
-                        });
-                    } else {
-                        responseStatus(200, sendedResult, res);
-                    }
-                });
-
-                
-            }
-        });
+                    });
+                }
+            });
+        }
     });
-
 }
 
 export const updateProject = (req, res) => {
@@ -181,14 +179,14 @@ export const selectedProjects = (req, res) => {
     const sql = ``
 }
 
-export const getProjects=(req, res)=>{
+export const getProjects = (req, res) => {
 
-    const sql='SELECT projectID, projectName FROM projects WHERE ended=0'
+    const sql = 'SELECT projectID, projectName FROM projects WHERE ended=0'
 
-    connection.query(sql,(error,rows,fields)=>{
-        if(error){
-            responseStatus(500, {message: error.message}, res)
-        } else{
+    connection.query(sql, (error, rows, fields) => {
+        if (error) {
+            responseStatus(500, { message: error.message }, res)
+        } else {
             responseStatus(200, rows, res)
         }
     })

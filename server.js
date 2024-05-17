@@ -6,22 +6,26 @@ import { newjwtStrategy } from './middleware/passport.js';
 import cors from 'cors'
 
 
-const app=express();
-const port =process.env.PORT || 3500;
+const app = express();
+const port = process.env.PORT || 3500;
 
-  
-app.use(bodyParser.urlencoded({extended: true}));
+//использование парсеров для автоматического извлечения данных из запроса в типы данных языка JS
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+//использование аутентификации пользователя с помощью Passport.JS с включенной стратегией
 app.use(passport.initialize());
 newjwtStrategy(passport);
 
+//CORS политика
 app.use(cors({
-    origin: '*', // Разрешить запросы только с этого домена
-  }));
+  origin: '*', // Разрешить запросы только с этого домена
+}));
 
+//Создание маршрутов ресурсов
 routes(app);
 
-app.listen(port, ()=>{
-    console.log(`App listen on port ${port}`);
+//Запуск сервера 
+app.listen(port, () => {
+  console.log(`App listen on port ${port}`);
 })

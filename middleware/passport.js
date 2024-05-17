@@ -8,9 +8,10 @@ const extractJwt = ExtractJwt;
 //параметры для стратегии
 const options = {
     jwtFromRequest: extractJwt.fromAuthHeaderAsBearerToken(),//JWT токен берется из заголовка запроса
-    secretOrKey: jwtKey//мой ключ
+    secretOrKey: jwtKey//мой jwt ключ
 }
-
+//Определение новой стратегии аутентификации, функция ищет в базе данных пользователя с указанным в payload ID,
+// в случае если данного пользователя не существует функция вернет false в результате, что не даст доступ к ресурсу
 export const newjwtStrategy = (passport) => {
     passport.use(
         new jwtStrategy(options, (payload, done) => {
@@ -21,7 +22,7 @@ export const newjwtStrategy = (passport) => {
                     } else {
 
                         const user = rows
-                        
+
                         if (user) {
                             done(null, user)
                         } else {

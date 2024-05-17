@@ -189,12 +189,12 @@ export const getProjectReport = (req, res) => {
 
                     if (elem.statusID === 1 || elem.statusID === 2) {
                         if (endDatePlan <= nowDate) {
-                            deadlineStatus = deadlineStatuses[0]
-                        } else {
                             deadlineStatus = deadlineStatuses[1]
+                        } else {
+                            deadlineStatus = deadlineStatuses[0]
                         }
                     } else {
-                        
+
                         if (endDateFact <= endDatePlan) {
                             deadlineStatus = deadlineStatuses[0]
                         } else {
@@ -205,7 +205,7 @@ export const getProjectReport = (req, res) => {
                     deadlineStatus = deadlineStatuses[2]
                 }
 
-                return {...elem, deadlineStatus: deadlineStatus}
+                return { ...elem, deadlineStatus: deadlineStatus }
 
             })
 
@@ -215,11 +215,11 @@ export const getProjectReport = (req, res) => {
     })
 }
 
-export const getUserReport=(req,res)=>{
- 
-    let sql=`SELECT st.projectID,pr.projectName, st.taskID, ts.taskName, st.statusID, stat.statusName, st.endDatePlan, st.endDateFact, st.stageNumber, st.stageDescription FROM projectstages st, projects pr, tasks ts, stagestatus stat WHERE pr.projectID=st.projectID AND ts.taskID=st.taskID AND stat.statusID=st.statusID AND st.taskID<>9 AND st.userID=?`
-    
-    connection.query(sql,req.params['id'], (error, rows, fileds) => {
+export const getUserReport = (req, res) => {
+
+    let sql = `SELECT st.projectID,pr.projectName, st.taskID, ts.taskName, st.statusID, stat.statusName, st.endDatePlan, st.endDateFact, st.stageNumber, st.stageDescription FROM projectstages st, projects pr, tasks ts, stagestatus stat WHERE pr.projectID=st.projectID AND ts.taskID=st.taskID AND stat.statusID=st.statusID AND st.taskID<>9 AND st.userID=?`
+
+    connection.query(sql, req.params['id'], (error, rows, fileds) => {
         if (error)
             responseStatus(500, { message: error.message }, res)
         else {
@@ -243,25 +243,25 @@ export const getUserReport=(req,res)=>{
             })
 
 
-            sql=`SELECT ts.taskName, AVG(DATEDIFF(st.endDateFact, st.startDateFact)) as timeDays 
+            sql = `SELECT ts.taskName, AVG(DATEDIFF(st.endDateFact, st.startDateFact)) as timeDays 
             FROM projectstages st, tasks ts
             WHERE st.statusID=3 AND st.taskID!=9 AND ts.taskID=st.taskID AND st.userID=?
             GROUP BY taskName;`
-            connection.query(sql, req.params['id'], (error, rows, fields)=>{
-                if(error){
-                    responseStatus(500, {message: error.message}, res)
-                } else{
+            connection.query(sql, req.params['id'], (error, rows, fields) => {
+                if (error) {
+                    responseStatus(500, { message: error.message }, res)
+                } else {
 
-                    const tasksTimes=JSON.parse(JSON.stringify(rows))
+                    const tasksTimes = JSON.parse(JSON.stringify(rows))
 
-                    responseStatus(200, { newTasks, tasksInWork, successTasks, overdueTasks, tasksTimes}, res)
+                    responseStatus(200, { newTasks, tasksInWork, successTasks, overdueTasks, tasksTimes }, res)
                 }
             })
 
 
 
 
-            
+
         }
 
 

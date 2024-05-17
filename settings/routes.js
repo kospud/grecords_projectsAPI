@@ -6,7 +6,7 @@ import passport from 'passport';
 import { getTemplate, getTemplates } from '../controller/templatesController.js';
 import { getStatuses } from '../controller/StatusesController.js';
 
-
+//определение маршрутов приложения
 export const routes = (app) => {
 
     app
